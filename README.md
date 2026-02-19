@@ -1,4 +1,6 @@
 # RL-LOGO-SYSTEM
+
+
 🚀 إطلاق مشروع جديد:
 
 
@@ -58,5 +60,6 @@ HTML5, CSS3, JavaScript, SVG, html2canvas, Google Fonts, Font Awesome
 
 
 
-
+للحصول على معلومات اكثر وفيديو للأداة يمكنك زيارتنا على لينكد ان
+(https://www.linkedin.com/feed/update/urn:li:activity:7430336388325122048/?originTrackingId=BKUC7xPdFK6UMzuU6%2FDErQ%3D%3D)
 يسعدني سماع آرائكم واقتراحاتكم لتطوير النظام أكثر 🙌
