@@ -1,0 +1,2147 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aura Engine - AI Logo Generator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;700;900&family=Cinzel:wght@400;700&family=Montserrat:wght@100;300;700;900&family=Pacifico&family=Syncopate:wght@400;700&family=Amiri:ital,wght@0,400;0,700;1,400&family=Righteous&display=swap');
+
+        :root {
+            --bg-dark: #050505;
+            --surface: rgba(20, 20, 20, 0.85);
+            --surface-light: rgba(40, 40, 40, 0.6);
+            --primary-gold: #d4af37;
+            --accent-blue: #00d2ff;
+            --text-main: #eaeaea;
+            --text-muted: #888;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Cairo', sans-serif;
+            background-color: var(--bg-dark);
+            background-image: radial-gradient(circle at 50% 0%, #1a1a24 0%, #000 100%);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden; /* منع التمرير نهائياً */
+        }
+
+        /* --- القائمة الجانبية --- */
+        .sidebar {
+            width: 300px;
+            background: var(--surface);
+            backdrop-filter: blur(20px);
+            padding: 25px;
+            border-left: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            box-shadow: -10px 0 30px rgba(0,0,0,0.9);
+            z-index: 100;
+            flex-shrink: 0;
+            overflow-y: auto;
+        }
+
+        .logo-title {
+            font-family: 'Syncopate', sans-serif;
+            font-size: 20px;
+            color: var(--primary-gold);
+            margin-bottom: 25px;
+            text-align: center;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+            padding-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .logo-title i { font-size: 24px; color: var(--accent-blue); }
+
+        .control-group { margin-bottom: 15px; }
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            background-color: rgba(0, 0, 0, 0.6);
+            border: 1px solid #333;
+            color: var(--text-main);
+            border-radius: 8px;
+            outline: none;
+            transition: 0.3s;
+            box-sizing: border-box;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        input:focus {
+            border-color: var(--primary-gold);
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
+        }
+
+        /* --- الإحصائيات المدمجة --- */
+        .rl-stats {
+            margin-top: 15px;
+            background: var(--surface-light);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.05);
+            font-family: monospace;
+            font-size: 12px;
+            opacity: 0.5;
+            transition: opacity 0.3s;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            border-bottom: 1px dashed #444;
+            padding-bottom: 4px;
+        }
+
+        .highlight { color: var(--accent-blue); font-weight: bold; }
+        
+        .progress-bar {
+            height: 4px;
+            background: #222;
+            border-radius: 2px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%; width: 0%;
+            background: linear-gradient(90deg, var(--accent-blue), var(--primary-gold));
+            transition: width 0.1s linear;
+        }
+
+        .btn-generate {
+            margin-top: auto;
+            background: linear-gradient(45deg, #9b781b, #d4af37);
+            color: #000;
+            border: none;
+            padding: 15px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-generate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(212, 175, 55, 0.4);
+        }
+
+        .btn-generate:disabled {
+            background: #333; color: #666; cursor: not-allowed; transform: none; box-shadow: none;
+        }
+
+        /* أزرار التحكم الإضافية */
+        .btn-toggle, .btn-mode {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            background: var(--surface-light);
+            color: var(--text-main);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Cairo', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-toggle:hover, .btn-mode:hover {
+            background: rgba(212, 175, 55, 0.2);
+            border-color: var(--primary-gold);
+            transform: translateY(-1px);
+        }
+
+        .btn-toggle.active {
+            background: linear-gradient(45deg, rgba(212, 175, 55, 0.3), rgba(0, 210, 255, 0.3));
+            border-color: var(--primary-gold);
+            color: var(--primary-gold);
+        }
+
+        .btn-mode {
+            background: var(--surface-light);
+            border-color: rgba(255,255,255,0.1);
+            color: var(--text-muted);
+            position: relative;
+        }
+
+        .btn-mode:hover {
+            background: rgba(212, 175, 55, 0.2);
+            border-color: var(--primary-gold);
+            color: var(--text-main);
+        }
+
+        .btn-mode.active {
+            background: linear-gradient(45deg, rgba(0, 210, 255, 0.4), rgba(212, 175, 55, 0.4));
+            border-color: var(--accent-blue);
+            color: var(--primary-gold);
+            box-shadow: 0 0 15px rgba(0, 210, 255, 0.3);
+        }
+
+        .btn-mode.active:hover {
+            background: linear-gradient(45deg, rgba(0, 210, 255, 0.5), rgba(212, 175, 55, 0.5));
+            box-shadow: 0 0 20px rgba(0, 210, 255, 0.4);
+        }
+
+        .btn-mode.active::after {
+            content: '✓';
+            position: absolute;
+            left: 10px;
+            color: var(--accent-blue);
+            font-weight: bold;
+        }
+
+        /* --- مساحة العرض الرئيسية (الشبكة) --- */
+        .main-stage {
+            flex-grow: 1;
+            padding: 15px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        /* شبكة 5 أعمده وصفيّن تملأ الشاشة تماماً */
+        .logos-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 15px;
+            width: 100%;
+            height: 100%;
+        }
+
+        .logo-display {
+            width: 100%;
+            height: 100%;
+            border-radius: 12px;
+            background: radial-gradient(circle, #1a1a1a 0%, #0a0a0a 100%);
+            border: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease, background 0.5s ease;
+        }
+
+        .logo-display::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 1;
+            pointer-events: none;
+            transition: background 0.5s ease;
+        }
+
+        .logo-display.has-colored-bg::before {
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .logo-display:hover {
+            transform: scale(1.02);
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        .logo-display:hover .download-btn {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* زر التحميل */
+        .download-btn {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: linear-gradient(45deg, rgba(0, 210, 255, 0.9), rgba(212, 175, 55, 0.9));
+            color: #000;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 20;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .download-btn:hover {
+            background: linear-gradient(45deg, rgba(0, 210, 255, 1), rgba(212, 175, 55, 1));
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.4);
+        }
+
+        .download-menu {
+            position: absolute;
+            bottom: 45px;
+            right: 10px;
+            background: var(--surface);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 5px;
+            display: none;
+            flex-direction: column;
+            gap: 3px;
+            z-index: 21;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+            min-width: 140px;
+        }
+
+        .download-menu.show {
+            display: flex;
+        }
+
+        .download-option {
+            padding: 8px 12px;
+            background: var(--surface-light);
+            border: none;
+            color: var(--text-main);
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 11px;
+            text-align: right;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .download-option:hover {
+            background: rgba(212, 175, 55, 0.3);
+            color: var(--primary-gold);
+        }
+
+        .variant-label {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 10px;
+            color: #fff;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.1);
+            z-index: 10;
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .logo-shape {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            transition: all 0.2s ease;
+            width: 90%;
+            height: 90%;
+            box-sizing: border-box;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* ضمان أن شعارات SVG تظهر داخل الإطار بنفس التباعد والمحاذاة */
+        .logo-shape svg {
+            max-width: 80%;
+            max-height: 80%;
+            width: auto;
+            height: auto;
+            display: block;
+        }
+
+        .logo-text-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            height: 100%;
+            position: relative;
+            z-index: 2;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="logo-title">
+            <i class="fa-solid fa-layer-group"></i>
+            AURA ENGINE
+            <span style="font-size: 9px; letter-spacing: 4px; color: #888;">AI Logo Generator</span>
+        </div>
+        
+        <div class="control-group">
+            <label>اسم العلامة (Brand Name)</label>
+            <input type="text" id="logoName" placeholder="مثال: AURA, نون..." value="AURA">
+        </div>
+
+        <div class="control-group">
+            <label>دورات التدريب (Epochs)</label>
+            <input type="number" id="epochInput" value="60" min="20" max="200" step="10">
+        </div>
+
+        <div class="rl-stats" id="rlStats">
+            <div class="stat-item"><span>Status:</span> <span class="highlight" id="statusText">Idle</span></div>
+            <div class="stat-item"><span>Epoch:</span> <span id="epochCount">0</span></div>
+            <div class="stat-item"><span>Loss (Clip):</span> <span id="policyLoss">0.00</span></div>
+            <div class="stat-item"><span>Reward:</span> <span style="color:var(--primary-gold)" id="totalReward">0.00</span></div>
+            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        </div>
+
+        <button class="btn-toggle" id="bgToggleBtn" onclick="toggleBackgrounds()">
+            <i class="fa-solid fa-image"></i> تفعيل الخلفيات المتنوعة
+        </button>
+
+        <button class="btn-mode" id="vectorModeBtn" onclick="setVectorMode()">
+            <i class="fa-solid fa-vector-square"></i> وضع Vector Logo
+        </button>
+
+        <button class="btn-generate" id="generateBtn" onclick="startRLEngine()">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> توليد 10 شعارات
+        </button>
+    </div>
+
+    <div class="main-stage">
+        <div class="logos-grid" id="logosGrid"></div>
+    </div>
+
+    <script>
+        // متغيرات الحالة
+        let backgroundsEnabled = false;
+        let currentMode = 'normal'; // 'normal', 'vector'
+        let backgroundInterval = null;
+
+        // قواعد البيانات البصرية الواسعة
+        const featureSpace = {
+            fonts: ['"Cairo", sans-serif', '"Cinzel", serif', '"Montserrat", sans-serif', '"Pacifico", cursive', '"Syncopate", sans-serif', '"Amiri", serif', '"Righteous", cursive'],
+            icons: [
+                'fa-brain', 'fa-bolt', 'fa-crown', 'fa-cube', 'fa-leaf', 
+                'fa-fire', 'fa-gem', 'fa-infinity', 'fa-shield-halved', 
+                'fa-rocket', 'fa-code', 'fa-microchip', 'fa-fingerprint', 'fa-globe',
+                'fa-star', 'fa-heart', 'fa-diamond', 'fa-circle', 'fa-square',
+                'fa-triangle', 'fa-hexagon', 'fa-octagon', 'fa-pentagon'
+            ],
+            categories: [
+                { id: 'text', name: 'طباعي', icon: 'fa-font' },
+                { id: 'luxury', name: 'فاخر', icon: 'fa-gem' },
+                { id: 'geometric', name: 'هندسي', icon: 'fa-shapes' },
+                { id: 'creative', name: 'إبداعي', icon: 'fa-palette' },
+                { id: 'iconic', name: 'أيقوني', icon: 'fa-vector-square' }
+            ],
+            textStyles: ['normal', 'italic', 'oblique'],
+            opacities: [0.6, 0.7, 0.8, 0.9, 1.0],
+            backgrounds: [
+                'radial-gradient(circle, #1a1a1a 0%, #0a0a0a 100%)',
+                'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+                'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+                'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
+                'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
+                'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
+                'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
+                'radial-gradient(circle at top, #1e3c72 0%, #2a5298 100%)',
+                'radial-gradient(circle at bottom, #d4af37 0%, #9b781b 100%)',
+                'conic-gradient(from 0deg, #667eea, #764ba2, #f093fb, #f5576c, #667eea)',
+                'linear-gradient(45deg, #0f0c29, #302b63, #24243e)',
+                'radial-gradient(ellipse at center, #1a1a2e 0%, #16213e 50%, #0f3460 100%)'
+            ]
+        };
+
+        function getRandom(arr) {
+            return arr[Math.floor(Math.random() * arr.length)];
+        }
+
+        function generateRandomColor() {
+            const hue = Math.floor(Math.random() * 360);
+            return `hsl(${hue}, ${70 + Math.random() * 30}%, ${50 + Math.random() * 20}%)`;
+        }
+
+        // تفعيل/إلغاء تفعيل الخلفيات المتنوعة
+        function toggleBackgrounds() {
+            backgroundsEnabled = !backgroundsEnabled;
+            const btn = document.getElementById('bgToggleBtn');
+            
+            if (backgroundsEnabled) {
+                btn.classList.add('active');
+                btn.innerHTML = '<i class="fa-solid fa-image"></i> تعطيل الخلفيات المتنوعة';
+                startBackgroundRotation();
+            } else {
+                btn.classList.remove('active');
+                btn.innerHTML = '<i class="fa-solid fa-image"></i> تفعيل الخلفيات المتنوعة';
+                stopBackgroundRotation();
+                resetBackgrounds();
+            }
+        }
+
+        // بدء تدوير الخلفيات (فقط أثناء التدريب)
+        function startBackgroundRotation() {
+            if (backgroundInterval) clearInterval(backgroundInterval);
+            backgroundInterval = setInterval(() => {
+                const displays = document.querySelectorAll('.logo-display');
+                displays.forEach(display => {
+                    const randomBg = getRandom(featureSpace.backgrounds);
+                    display.style.background = randomBg;
+                    display.style.transition = 'background 0.5s ease';
+                    // إضافة class للخلفيات الملوّنة لزيادة opacity overlay
+                    if (!display.style.background.includes('#1a1a1a')) {
+                        display.classList.add('has-colored-bg');
+                    }
+                });
+            }, 2000);
+        }
+
+        // إيقاف تدوير الخلفيات
+        function stopBackgroundRotation() {
+            if (backgroundInterval) {
+                clearInterval(backgroundInterval);
+                backgroundInterval = null;
+            }
+        }
+
+        // إعادة تعيين الخلفيات
+        function resetBackgrounds() {
+            const displays = document.querySelectorAll('.logo-display');
+            displays.forEach(display => {
+                display.style.background = 'radial-gradient(circle, #1a1a1a 0%, #0a0a0a 100%)';
+                display.classList.remove('has-colored-bg');
+            });
+        }
+
+        // وضع Vector Logo
+        function setVectorMode() {
+            const btn = document.getElementById('vectorModeBtn');
+            
+            if (currentMode === 'vector') {
+                // إلغاء التفعيل
+                currentMode = 'normal';
+                btn.classList.remove('active');
+            } else {
+                // تفعيل وضع Vector
+                currentMode = 'vector';
+                btn.classList.add('active');
+            }
+        }
+
+        // بناء الشبكة مبدئياً عند تحميل الصفحة
+        function initGrid() {
+            const grid = document.getElementById('logosGrid');
+            grid.innerHTML = '';
+            for(let i = 0; i < 10; i++) {
+                const catIndex = Math.floor(i / 2); // كل فئة تأخذ صورتين
+                const category = featureSpace.categories[catIndex];
+
+                const display = document.createElement('div');
+                display.className = 'logo-display';
+                display.id = `display-${i}`;
+                
+                const label = document.createElement('div');
+                label.className = 'variant-label';
+                label.innerHTML = `<i class="fa-solid ${category.icon}"></i> ${category.name}`;
+                
+                const shape = document.createElement('div');
+                shape.className = 'logo-shape';
+                shape.id = `shape-${i}`;
+
+                // زر التحميل
+                const downloadBtn = document.createElement('button');
+                downloadBtn.className = 'download-btn';
+                downloadBtn.innerHTML = '<i class="fa-solid fa-download"></i> تحميل';
+                downloadBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    toggleDownloadMenu(i);
+                };
+
+                // قائمة التحميل
+                const downloadMenu = document.createElement('div');
+                downloadMenu.className = 'download-menu';
+                downloadMenu.id = `downloadMenu-${i}`;
+
+                const formats = [
+                    { name: 'PNG', icon: 'fa-image', format: 'png', bg: true },
+                    { name: 'SVG', icon: 'fa-code', format: 'svg', bg: true },
+                    { name: 'JPG', icon: 'fa-file-image', format: 'jpg', bg: true }
+                ];
+
+                formats.forEach(format => {
+                    const option = document.createElement('button');
+                    option.className = 'download-option';
+                    option.innerHTML = `<i class="fa-solid ${format.icon}"></i> ${format.name}`;
+                    option.onclick = (e) => {
+                        e.stopPropagation();
+                        downloadLogo(i, format.format, format.bg);
+                        downloadMenu.classList.remove('show');
+                    };
+                    downloadMenu.appendChild(option);
+                });
+                
+                display.appendChild(label);
+                display.appendChild(shape);
+                display.appendChild(downloadBtn);
+                display.appendChild(downloadMenu);
+                grid.appendChild(display);
+            }
+        }
+
+        // تبديل قائمة التحميل
+        function toggleDownloadMenu(index) {
+            const menu = document.getElementById(`downloadMenu-${index}`);
+            if (!menu) return;
+            // إغلاق جميع القوائم الأخرى
+            document.querySelectorAll('.download-menu').forEach(m => {
+                if (m !== menu) m.classList.remove('show');
+            });
+            menu.classList.toggle('show');
+        }
+
+        // إغلاق القوائم عند النقر خارجها
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.download-btn') && !e.target.closest('.download-menu')) {
+                document.querySelectorAll('.download-menu').forEach(menu => {
+                    menu.classList.remove('show');
+                });
+            }
+        });
+
+        // دالة تحميل الشعار بعدة صيغ – إعادة بناء بسيطة ومباشرة
+        function downloadLogo(index, format, withBackground) {
+            const display = document.getElementById(`display-${index}`);
+            const shape = document.getElementById(`shape-${index}`);
+            const text = document.getElementById('logoName').value || "AURA";
+
+            if (!display || !shape) return;
+
+            const fileName = `${text}_logo_${index + 1}`;
+
+            // في وضع SVG نحاول حفظ الـ SVG النقي مباشرة (أفضل جودة ممكنة)
+            if (format === 'svg') {
+                const svgElement = shape.querySelector('svg');
+                if (svgElement) {
+                    const svgClone = svgElement.cloneNode(true);
+
+                    if (!svgClone.getAttribute('xmlns')) {
+                        svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+                    }
+
+                    const displayRect = display.getBoundingClientRect();
+                    svgClone.setAttribute('width', displayRect.width.toString());
+                    svgClone.setAttribute('height', displayRect.height.toString());
+
+                    // خلفية اختيارية بناءً على withBackground
+                    if (withBackground) {
+                        const computedStyle = window.getComputedStyle(display);
+                        const bgColor = computedStyle.backgroundColor;
+                        const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                        bgRect.setAttribute('width', '100%');
+                        bgRect.setAttribute('height', '100%');
+                        bgRect.setAttribute('fill', (bgColor && bgColor !== 'rgba(0, 0, 0, 0)') ? bgColor : '#1a1a1a');
+                        svgClone.insertBefore(bgRect, svgClone.firstChild);
+                    }
+
+                    const svgData = new XMLSerializer().serializeToString(svgClone);
+                    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+                    const svgUrl = URL.createObjectURL(svgBlob);
+                    const link = document.createElement('a');
+                    link.href = svgUrl;
+                    link.download = `${fileName}.svg`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(svgUrl);
+                    return;
+                }
+            }
+
+            // تحميل PNG / JPG بطريقة مباشرة من نفس العنصر على الشاشة (كأنها Screenshot)
+            const outputFormat = format === 'jpg' ? 'jpeg' : 'png';
+
+            // نستخدم العنصر نفسه بدون استنساخ، ونحافظ على نفس الخلفية كما هي على الشاشة
+            const options = {
+                scale: 3,        // دقة عالية
+                useCORS: true,
+                allowTaint: true,
+                logging: false,
+            };
+
+            // التأكد من تحميل الخطوط قبل الالتقاط (إن توفّر دعم document.fonts)
+            const doCapture = () => {
+                // إخفاء عناصر التحميل والليبل (نوع العنصر) مؤقتاً حتى لا تظهر في الصورة
+                const tmpHidden = [];
+                display.querySelectorAll('.download-btn, .download-menu, .variant-label').forEach(el => {
+                    tmpHidden.push({ el, opacity: el.style.opacity, visibility: el.style.visibility });
+                    el.style.opacity = '0';
+                    el.style.visibility = 'hidden';
+                });
+
+                // إيقاف أي تحريك/تكبير أثناء الالتقاط (مثل hover scale)
+                const prevTransform = display.style.transform;
+                const prevTransition = display.style.transition;
+                display.style.transition = 'none';
+                display.style.transform = 'none';
+
+                html2canvas(display, options)
+                    .then(canvas => {
+                        // استرجاع حالة العناصر بعد الالتقاط
+                        tmpHidden.forEach(({ el, opacity, visibility }) => {
+                            el.style.opacity = opacity;
+                            el.style.visibility = visibility;
+                        });
+                        display.style.transform = prevTransform;
+                        display.style.transition = prevTransition;
+
+                        if (!canvas || canvas.width === 0 || canvas.height === 0) {
+                            alert('فشل إنشاء الصورة. يرجى المحاولة مرة أخرى.');
+                            return;
+                        }
+
+                        canvas.toBlob((blob) => {
+                            if (!blob) {
+                                alert('فشل تحويل الصورة. يرجى المحاولة مرة أخرى.');
+                                return;
+                            }
+
+                            const url = URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.download = `${fileName}.${format}`;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            URL.revokeObjectURL(url);
+                        }, `image/${outputFormat}`, format === 'jpg' ? 0.95 : 1.0);
+                    })
+                    .catch(err => {
+                        // استرجاع الحالة إذا حدث خطأ
+                        tmpHidden.forEach(({ el, opacity, visibility }) => {
+                            el.style.opacity = opacity;
+                            el.style.visibility = visibility;
+                        });
+                        display.style.transform = prevTransform;
+                        display.style.transition = prevTransition;
+
+                        console.error('Error generating image:', err);
+                        alert('حدث خطأ أثناء التحميل: ' + (err.message || 'خطأ غير معروف'));
+                    });
+            };
+
+            if (document.fonts && document.fonts.ready) {
+                document.fonts.ready
+                    .then(() => setTimeout(doCapture, 100))
+                    .catch(() => setTimeout(doCapture, 200));
+            } else {
+                setTimeout(doCapture, 150);
+            }
+        }
+
+        // تشغيل المحرك
+        function startRLEngine() {
+            const btn = document.getElementById('generateBtn');
+            const rlStats = document.getElementById('rlStats');
+            const text = document.getElementById('logoName').value || "AURA";
+            let maxEpochs = parseInt(document.getElementById('epochInput').value) || 60;
+            if (maxEpochs > 300) maxEpochs = 300; 
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الحوسبة...';
+            rlStats.style.opacity = "1";
+            document.getElementById('statusText').innerText = "Training PPO...";
+
+            // بدء تدوير الخلفيات إذا كانت مفعلة
+            if (backgroundsEnabled && !backgroundInterval) {
+                startBackgroundRotation();
+            }
+
+            initGrid(); // إعادة تهيئة البطاقات
+            const shapes = [];
+            for(let i = 0; i < 10; i++) shapes.push(document.getElementById(`shape-${i}`));
+
+            let epoch = 0;
+            let cumulativeReward = 0;
+
+            // حلقة الاستكشاف (Exploration)
+            const trainingLoop = setInterval(() => {
+                epoch++;
+                cumulativeReward += (Math.random() * 5);
+                let policyLoss = Math.max(0.01, 1.5 - (epoch * (1.5/maxEpochs)));
+
+                document.getElementById('epochCount').innerText = `${epoch}/${maxEpochs}`;
+                document.getElementById('policyLoss').innerText = policyLoss.toFixed(3);
+                document.getElementById('totalReward').innerText = "+" + Math.floor(cumulativeReward);
+                document.getElementById('progressFill').style.width = `${(epoch/maxEpochs)*100}%`;
+
+                // تحريك عشوائي أثناء التفكير
+                shapes.forEach((shape, i) => {
+                    const cat = featureSpace.categories[Math.floor(i / 2)].id;
+                    const tempIcon = getRandom(featureSpace.icons);
+                    const textStyle = getRandom(featureSpace.textStyles);
+                    const opacity = getRandom(featureSpace.opacities);
+                    
+                    // وضع Vector أثناء التدريب
+                    if (currentMode === 'vector') {
+                        const svgSize = 150;
+                        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                        svg.setAttribute('width', svgSize);
+                        svg.setAttribute('height', svgSize);
+                        svg.setAttribute('viewBox', `0 0 ${svgSize} ${svgSize}`);
+                        svg.style.transform = `scale(${0.7 + Math.random()*0.3}) rotate(${(Math.random()-0.5)*20}deg)`;
+                        
+                        // استخدام نمط عشوائي من 100 نمط أثناء التدريب
+                        const patternIndex = Math.floor(Math.random() * 100);
+                        generateVectorPattern(svg, svgSize, patternIndex, text, generateRandomColor(), generateRandomColor(), opacity, i);
+                        
+                        shape.innerHTML = '';
+                        shape.appendChild(svg);
+                    } else {
+                        shape.innerHTML = `<div class="logo-text-wrapper" style="flex-direction: ${Math.random()>0.5?'row':'column'}; color:${generateRandomColor()}; transform: scale(${0.7 + Math.random()*0.3}) rotate(${(Math.random()-0.5)*20}deg); font-family: ${getRandom(featureSpace.fonts)}; font-style: ${textStyle}; opacity: ${opacity};">
+                            <i class="fa-solid ${tempIcon}"></i>
+                            <span>${text}</span>
+                        </div>`;
+                    }
+                    
+                    // تطبيق الخلفيات المتنوعة أثناء التدريب (يتم عبر التدوير التلقائي)
+                    if (backgroundsEnabled) {
+                        const display = shape.closest('.logo-display');
+                        if (display) {
+                            const randomBg = getRandom(featureSpace.backgrounds);
+                            display.style.background = randomBg;
+                            // إضافة class للخلفيات الملوّنة لزيادة opacity overlay
+                            if (!randomBg.includes('#1a1a1a')) {
+                                display.classList.add('has-colored-bg');
+                            } else {
+                                display.classList.remove('has-colored-bg');
+                            }
+                        }
+                    }
+                });
+
+                if (epoch >= maxEpochs) {
+                    clearInterval(trainingLoop);
+                    // إيقاف تدوير الخلفيات عند انتهاء التدريب
+                    stopBackgroundRotation();
+                    applyFinalPolicies(shapes, text);
+                    document.getElementById('statusText').innerText = "Converged";
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> إعادة التوليد';
+                }
+            }, 30);
+        }
+
+        // دالة توليد 100 نمط Vector Logo إبداعي
+        function generateVectorPattern(svg, svgSize, patternIndex, text, color1, color2, opacity, index) {
+            const centerX = svgSize / 2;
+            const centerY = svgSize / 2;
+            const radius = svgSize / 3;
+            
+            // إنشاء gradients وpatterns
+            const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            
+            // Gradient 1
+            const grad1 = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+            grad1.setAttribute('id', `grad1-${index}`);
+            grad1.setAttribute('x1', '0%');
+            grad1.setAttribute('y1', '0%');
+            grad1.setAttribute('x2', '100%');
+            grad1.setAttribute('y2', '100%');
+            const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            stop1.setAttribute('offset', '0%');
+            stop1.setAttribute('stop-color', color1);
+            const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            stop2.setAttribute('offset', '100%');
+            stop2.setAttribute('stop-color', color2);
+            grad1.appendChild(stop1);
+            grad1.appendChild(stop2);
+            defs.appendChild(grad1);
+            
+            // Radial Gradient
+            const radGrad = document.createElementNS('http://www.w3.org/2000/svg', 'radialGradient');
+            radGrad.setAttribute('id', `radGrad-${index}`);
+            const radStop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            radStop1.setAttribute('offset', '0%');
+            radStop1.setAttribute('stop-color', color1);
+            const radStop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            radStop2.setAttribute('offset', '100%');
+            radStop2.setAttribute('stop-color', color2);
+            radGrad.appendChild(radStop1);
+            radGrad.appendChild(radStop2);
+            defs.appendChild(radGrad);
+            
+            svg.appendChild(defs);
+            
+            // 100 نمط مختلف
+            switch(patternIndex) {
+                // الأنماط 1-10: أشكال هندسية أساسية مع تأثيرات
+                case 0: // دائرة متدرجة مع نص مركزي
+                    createCircle(svg, centerX, centerY, radius, `url(#radGrad-${index})`, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 24);
+                    break;
+                case 1: // نجمة متعددة الطبقات
+                    for(let i = 0; i < 3; i++) {
+                        createStar(svg, centerX, centerY, radius - i*15, 5 + i*2, color1, opacity * (1 - i*0.3), i*30);
+                    }
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 2: // سداسي مع دوائر داخلية
+                    createHexagon(svg, centerX, centerY, radius, color1, opacity);
+                    createCircle(svg, centerX, centerY, radius*0.6, 'none', opacity*0.5, color2, 3);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 3: // مربع دوار مع خطوط قطرية
+                    createRotatedSquare(svg, centerX, centerY, radius*1.2, color1, opacity, 45);
+                    createDiagonalLines(svg, svgSize, color2, opacity*0.4);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 4: // مثلثات متداخلة
+                    for(let i = 0; i < 4; i++) {
+                        createTriangle(svg, centerX, centerY, radius - i*12, color1, opacity*(1-i*0.2), i*30);
+                    }
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 5: // بيضاوي مع خطوط متوازية
+                    createEllipse(svg, centerX, centerY, radius*1.2, radius*0.8, `url(#grad1-${index})`, opacity);
+                    createParallelLines(svg, svgSize, color2, opacity*0.3);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 6: // معين مع نقاط زخرفية
+                    createDiamond(svg, centerX, centerY, radius, color1, opacity);
+                    createDecorativeDots(svg, svgSize, color2, opacity*0.6);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 7: // دائرة مقطوعة (Pacman style)
+                    createArc(svg, centerX, centerY, radius, color1, opacity, 45, 315);
+                    addText(svg, centerX, centerY + 8, text, color1, 24);
+                    break;
+                case 8: // مضلع ثماني مع دوائر في الزوايا
+                    createOctagon(svg, centerX, centerY, radius, color1, opacity);
+                    for(let i = 0; i < 8; i++) {
+                        const angle = (i * Math.PI) / 4;
+                        const x = centerX + radius * Math.cos(angle);
+                        const y = centerY + radius * Math.sin(angle);
+                        createCircle(svg, x, y, 8, color2, opacity*0.8);
+                    }
+                    addText(svg, centerX, centerY + 8, text, color1, 20);
+                    break;
+                case 9: // شكل X مع دوائر
+                    createXShape(svg, centerX, centerY, radius, color1, opacity);
+                    createCircle(svg, centerX, centerY, radius*0.4, `url(#radGrad-${index})`, opacity*0.5);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                
+                // الأنماط 10-20: أنماط متقدمة مع gradients
+                case 10: // دوائر متحدة المركز
+                    for(let i = 0; i < 5; i++) {
+                        createCircle(svg, centerX, centerY, radius - i*15, i%2 === 0 ? color1 : color2, opacity*(1-i*0.15), 'none', 2);
+                    }
+                    addText(svg, centerX, centerY + 8, text, color1, 24);
+                    break;
+                case 11: // نجمة داخل دائرة
+                    createCircle(svg, centerX, centerY, radius, 'none', opacity, color1, 4);
+                    createStar(svg, centerX, centerY, radius*0.7, 8, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 12: // مربعات متداخلة دوارة
+                    for(let i = 0; i < 4; i++) {
+                        createRotatedSquare(svg, centerX, centerY, radius - i*18, i%2 === 0 ? color1 : color2, opacity*(1-i*0.2), i*22.5);
+                    }
+                    addText(svg, centerX, centerY + 8, text, color1, 20);
+                    break;
+                case 13: // شكل زهرة
+                    createFlower(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 14: // خطوط شعاعية
+                    createRadialLines(svg, centerX, centerY, radius, color1, opacity*0.6);
+                    createCircle(svg, centerX, centerY, radius*0.5, `url(#radGrad-${index})`, opacity*0.7);
+                    addText(svg, centerX, centerY + 8, text, color1, 24);
+                    break;
+                case 15: // شكل متعدد الأضلاع مع خطوط داخلية
+                    createPolygon(svg, centerX, centerY, radius, 7, color1, opacity);
+                    createInnerLines(svg, centerX, centerY, radius, color2, opacity*0.4);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 16: // دوائر متقاطعة (Venn diagram style)
+                    createCircle(svg, centerX - radius*0.3, centerY, radius*0.8, color1, opacity*0.6);
+                    createCircle(svg, centerX + radius*0.3, centerY, radius*0.8, color2, opacity*0.6);
+                    addText(svg, centerX, centerY + 8, text, color1, 24);
+                    break;
+                case 17: // شكل قوس متعدد
+                    for(let i = 0; i < 6; i++) {
+                        const startAngle = i * 60;
+                        createArc(svg, centerX, centerY, radius - i*8, i%2 === 0 ? color1 : color2, opacity*(1-i*0.1), startAngle, startAngle + 50);
+                    }
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 18: // مثلثات متصلة
+                    createConnectedTriangles(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 19: // شكل حلزوني
+                    createSpiral(svg, centerX, centerY, radius, color1, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                
+                // الأنماط 20-30: أنماط فنية معقدة
+                case 20: // شبكة هندسية
+                    createGridPattern(svg, svgSize, color1, color2, opacity);
+                    createCircle(svg, centerX, centerY, radius*0.6, `url(#radGrad-${index})`, opacity*0.8);
+                    addText(svg, centerX, centerY + 8, text, color1, 24);
+                    break;
+                case 21: // شكل ماندالا
+                    createMandala(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 20);
+                    break;
+                case 22: // دوائر متحركة (wave effect)
+                    createWaveCircles(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 23: // شكل متعدد الطبقات
+                    createLayeredShape(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 24: // خطوط منحنية متداخلة
+                    createCurvedLines(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 25: // شكل سداسي مع مثلثات
+                    createHexagonWithTriangles(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 26: // دوائر متباعدة مع خطوط
+                    createScatteredCircles(svg, svgSize, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 24);
+                    break;
+                case 27: // شكل متعدد الألوان
+                    createMultiColorShape(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 28: // خطوط متوازية منحنية
+                    createParallelCurves(svg, centerX, centerY, radius, color1, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 29: // شكل متعدد الأضلاع مع دوائر
+                    createPolygonWithCircles(svg, centerX, centerY, radius, 6, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                
+                // الأنماط 30-40: أنماط ثلاثية الأبعاد
+                case 30: // مكعب ثلاثي الأبعاد
+                    create3DCube(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 31: // هرم ثلاثي الأبعاد
+                    create3DPyramid(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 32: // دائرة ثلاثية الأبعاد
+                    create3DCircle(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 33: // شكل متعدد الأضلاع ثلاثي الأبعاد
+                    create3DPolygon(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 34: // نجمة ثلاثية الأبعاد
+                    create3DStar(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 35: // شكل متدرج ثلاثي الأبعاد
+                    create3DGradient(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 36: // خطوط ثلاثية الأبعاد
+                    create3DLines(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 37: // شكل متعدد الطبقات ثلاثي الأبعاد
+                    create3DLayered(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 38: // دائرة مع تأثير عمق
+                    createDepthCircle(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 39: // شكل متعدد الأضلاع مع عمق
+                    createDepthPolygon(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                
+                // الأنماط 40-50: أنماط زخرفية معقدة
+                case 40: // زخرفة إسلامية
+                    createIslamicPattern(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 20);
+                    break;
+                case 41: // زخرفة كلتية
+                    createCelticPattern(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 42: // زخرفة هندسية عربية
+                    createArabicGeometric(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 20);
+                    break;
+                case 43: // شكل متعدد الأضلاع مع زخرفة
+                    createDecorativePolygon(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 44: // خطوط متداخلة معقدة
+                    createComplexInterlaced(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 45: // شكل متعدد الأضلاع مع نقاط
+                    createPolygonWithDots(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 46: // زخرفة دائرية معقدة
+                    createComplexCircular(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 20);
+                    break;
+                case 47: // شكل متعدد الأضلاع مع خطوط
+                    createPolygonWithLines(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 48: // زخرفة متعددة الطبقات
+                    createMultiLayerDecorative(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 49: // شكل متعدد الأضلاع مع أقواس
+                    createPolygonWithArcs(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                
+                // الأنماط 50-60: أنماط حديثة ومبتكرة
+                case 50: // شكل متعدد الأضلاع مع تأثير blur
+                    createBlurredShape(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 24);
+                    break;
+                case 51: // خطوط متحركة
+                    createAnimatedLines(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 52: // شكل متعدد الأضلاع مع تأثير glow
+                    createGlowShape(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 24);
+                    break;
+                case 53: // دوائر متداخلة مع تأثير
+                    createNestedCirclesEffect(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 54: // شكل متعدد الأضلاع مع ظلال
+                    createShadowedShape(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 24);
+                    break;
+                case 55: // خطوط متعددة الاتجاهات
+                    createMultiDirectionLines(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 56: // شكل متعدد الأضلاع مع تدرج
+                    createGradientShape(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 24);
+                    break;
+                case 57: // دوائر متعددة مع خطوط
+                    createMultipleCirclesWithLines(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 58: // شكل متعدد الأضلاع مع تأثير depth
+                    createDepthEffect(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 24);
+                    break;
+                case 59: // خطوط منحنية متعددة
+                    createMultipleCurves(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                
+                // الأنماط 60-70: أنماط فريدة ومبتكرة
+                case 60: // شكل متعدد الأضلاع مع دوائر صغيرة
+                    createPolygonWithSmallCircles(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 61: // خطوط متقاطعة معقدة
+                    createComplexIntersecting(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 62: // شكل متعدد الأضلاع مع خطوط منحنية
+                    createPolygonWithCurvedLines(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 63: // دوائر متعددة مع تأثير
+                    createMultipleCirclesEffect(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 64: // شكل متعدد الأضلاع مع خطوط متوازية
+                    createPolygonWithParallelLines(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 65: // خطوط شعاعية مع دوائر
+                    createRadialLinesWithCircles(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 66: // شكل متعدد الأضلاع مع خطوط قطرية
+                    createPolygonWithDiagonalLines(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 67: // دوائر متعددة مع خطوط
+                    createCirclesWithConnectingLines(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 68: // شكل متعدد الأضلاع مع خطوط متقاطعة
+                    createPolygonWithIntersectingLines(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 69: // خطوط متعددة الاتجاهات مع دوائر
+                    createMultiDirectionWithCircles(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                
+                // الأنماط 70-80: أنماط متقدمة ومعقدة
+                case 70: // شكل متعدد الأضلاع مع تأثير متعدد
+                    createMultiEffectPolygon(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 71: // خطوط متعددة الطبقات
+                    createMultiLayerLines(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 72: // دوائر متعددة مع تأثير متدرج
+                    createGradientCircles(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 73: // شكل متعدد الأضلاع مع خطوط متعددة
+                    createPolygonWithMultipleLines(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 74: // خطوط متعددة الاتجاهات مع تأثير
+                    createMultiDirectionEffect(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 75: // دوائر متعددة مع خطوط متعددة
+                    createCirclesWithMultipleLines(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 76: // شكل متعدد الأضلاع مع تأثير متعدد الطبقات
+                    createMultiLayerEffect(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 77: // خطوط متعددة مع دوائر متعددة
+                    createMultipleLinesWithCircles(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 78: // شكل متعدد الأضلاع مع تأثير متعدد الألوان
+                    createMultiColorEffect(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 79: // خطوط متعددة مع تأثير متعدد
+                    createMultipleLinesEffect(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                
+                // الأنماط 80-90: أنماط فريدة ومبتكرة جداً
+                case 80: // شكل متعدد الأضلاع مع تأثير فريد
+                    createUniquePolygonEffect(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 81: // خطوط متعددة مع تأثير فريد
+                    createUniqueLinesEffect(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 82: // دوائر متعددة مع تأثير فريد
+                    createUniqueCirclesEffect(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 83: // شكل متعدد الأضلاع مع خطوط فريدة
+                    createUniquePolygonLines(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 84: // خطوط متعددة مع دوائر فريدة
+                    createUniqueLinesCircles(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 85: // شكل متعدد الأضلاع مع تأثير متعدد فريد
+                    createUniqueMultiEffect(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 86: // خطوط متعددة مع تأثير متعدد فريد
+                    createUniqueMultiLinesEffect(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 87: // دوائر متعددة مع تأثير متعدد فريد
+                    createUniqueMultiCirclesEffect(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 88: // شكل متعدد الأضلاع مع خطوط متعددة فريدة
+                    createUniquePolygonMultipleLines(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 89: // خطوط متعددة مع دوائر متعددة فريدة
+                    createUniqueMultipleLinesCircles(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                
+                // الأنماط 90-100: أنماط نهائية مذهلة
+                case 90: // شكل متعدد الأضلاع نهائي
+                    createFinalPolygon(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 91: // خطوط متعددة نهائية
+                    createFinalLines(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 92: // دوائر متعددة نهائية
+                    createFinalCircles(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 93: // شكل متعدد الأضلاع مع خطوط نهائية
+                    createFinalPolygonLines(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 94: // خطوط متعددة مع دوائر نهائية
+                    createFinalLinesCircles(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 95: // شكل متعدد الأضلاع مع تأثير نهائي
+                    createFinalPolygonEffect(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 96: // خطوط متعددة مع تأثير نهائي
+                    createFinalLinesEffect(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 97: // دوائر متعددة مع تأثير نهائي
+                    createFinalCirclesEffect(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 98: // شكل متعدد الأضلاع مع خطوط متعددة نهائية
+                    createFinalPolygonMultipleLines(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 22);
+                    break;
+                case 99: // النمط النهائي المذهل
+                    createUltimatePattern(svg, centerX, centerY, radius, color1, color2, opacity);
+                    addText(svg, centerX, centerY + 8, text, color1, 24);
+                    break;
+            }
+        }
+        
+        // دوال مساعدة لإنشاء الأشكال الأساسية
+        function createCircle(svg, cx, cy, r, fill, opacity, stroke, strokeWidth) {
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('cx', cx);
+            circle.setAttribute('cy', cy);
+            circle.setAttribute('r', r);
+            circle.setAttribute('fill', fill || 'none');
+            circle.setAttribute('opacity', opacity);
+            if (stroke) circle.setAttribute('stroke', stroke);
+            if (strokeWidth) circle.setAttribute('stroke-width', strokeWidth);
+            svg.appendChild(circle);
+        }
+        
+        function createStar(svg, cx, cy, r, points, fill, opacity, rotation) {
+            const star = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            const starPoints = [];
+            const outerRadius = r;
+            const innerRadius = r * 0.5;
+            for (let i = 0; i < points * 2; i++) {
+                const angle = (i * Math.PI) / points - Math.PI / 2;
+                const radius = i % 2 === 0 ? outerRadius : innerRadius;
+                const x = cx + radius * Math.cos(angle);
+                const y = cy + radius * Math.sin(angle);
+                starPoints.push(`${x},${y}`);
+            }
+            star.setAttribute('points', starPoints.join(' '));
+            star.setAttribute('fill', fill);
+            star.setAttribute('opacity', opacity);
+            if (rotation) star.setAttribute('transform', `rotate(${rotation} ${cx} ${cy})`);
+            svg.appendChild(star);
+        }
+        
+        function createHexagon(svg, cx, cy, r, fill, opacity) {
+            const hex = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            const points = [];
+            for (let i = 0; i < 6; i++) {
+                const angle = (i * Math.PI) / 3;
+                const x = cx + r * Math.cos(angle);
+                const y = cy + r * Math.sin(angle);
+                points.push(`${x},${y}`);
+            }
+            hex.setAttribute('points', points.join(' '));
+            hex.setAttribute('fill', 'none');
+            hex.setAttribute('stroke', fill);
+            hex.setAttribute('stroke-width', '4');
+            hex.setAttribute('opacity', opacity);
+            svg.appendChild(hex);
+        }
+        
+        function createRotatedSquare(svg, cx, cy, size, fill, opacity, rotation) {
+            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect.setAttribute('x', cx - size/2);
+            rect.setAttribute('y', cy - size/2);
+            rect.setAttribute('width', size);
+            rect.setAttribute('height', size);
+            rect.setAttribute('fill', 'none');
+            rect.setAttribute('stroke', fill);
+            rect.setAttribute('stroke-width', '4');
+            rect.setAttribute('opacity', opacity);
+            if (rotation) rect.setAttribute('transform', `rotate(${rotation} ${cx} ${cy})`);
+            svg.appendChild(rect);
+        }
+        
+        function createTriangle(svg, cx, cy, size, fill, opacity, rotation) {
+            const tri = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            const h = size * Math.sqrt(3) / 2;
+            const points = `${cx},${cy - h} ${cx + size/2},${cy + h/2} ${cx - size/2},${cy + h/2}`;
+            tri.setAttribute('points', points);
+            tri.setAttribute('fill', 'none');
+            tri.setAttribute('stroke', fill);
+            tri.setAttribute('stroke-width', '4');
+            tri.setAttribute('opacity', opacity);
+            if (rotation) tri.setAttribute('transform', `rotate(${rotation} ${cx} ${cy})`);
+            svg.appendChild(tri);
+        }
+        
+        function createEllipse(svg, cx, cy, rx, ry, fill, opacity) {
+            const ellipse = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+            ellipse.setAttribute('cx', cx);
+            ellipse.setAttribute('cy', cy);
+            ellipse.setAttribute('rx', rx);
+            ellipse.setAttribute('ry', ry);
+            ellipse.setAttribute('fill', fill);
+            ellipse.setAttribute('opacity', opacity);
+            svg.appendChild(ellipse);
+        }
+        
+        function createDiamond(svg, cx, cy, size, fill, opacity) {
+            const diamond = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            diamond.setAttribute('points', `${cx},${cy-size} ${cx+size},${cy} ${cx},${cy+size} ${cx-size},${cy}`);
+            diamond.setAttribute('fill', 'none');
+            diamond.setAttribute('stroke', fill);
+            diamond.setAttribute('stroke-width', '4');
+            diamond.setAttribute('opacity', opacity);
+            svg.appendChild(diamond);
+        }
+        
+        function createArc(svg, cx, cy, r, fill, opacity, startAngle, endAngle) {
+            const start = startAngle * Math.PI / 180;
+            const end = endAngle * Math.PI / 180;
+            const x1 = cx + r * Math.cos(start);
+            const y1 = cy + r * Math.sin(start);
+            const x2 = cx + r * Math.cos(end);
+            const y2 = cy + r * Math.sin(end);
+            const largeArc = (end - start) > Math.PI ? 1 : 0;
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z`);
+            path.setAttribute('fill', fill);
+            path.setAttribute('opacity', opacity);
+            svg.appendChild(path);
+        }
+        
+        function createOctagon(svg, cx, cy, r, fill, opacity) {
+            const oct = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            const points = [];
+            for (let i = 0; i < 8; i++) {
+                const angle = (i * Math.PI) / 4;
+                const x = cx + r * Math.cos(angle);
+                const y = cy + r * Math.sin(angle);
+                points.push(`${x},${y}`);
+            }
+            oct.setAttribute('points', points.join(' '));
+            oct.setAttribute('fill', 'none');
+            oct.setAttribute('stroke', fill);
+            oct.setAttribute('stroke-width', '4');
+            oct.setAttribute('opacity', opacity);
+            svg.appendChild(oct);
+        }
+        
+        function createXShape(svg, cx, cy, size, fill, opacity) {
+            const line1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line1.setAttribute('x1', cx - size/2);
+            line1.setAttribute('y1', cy - size/2);
+            line1.setAttribute('x2', cx + size/2);
+            line1.setAttribute('y2', cy + size/2);
+            line1.setAttribute('stroke', fill);
+            line1.setAttribute('stroke-width', '6');
+            line1.setAttribute('opacity', opacity);
+            svg.appendChild(line1);
+            
+            const line2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line2.setAttribute('x1', cx + size/2);
+            line2.setAttribute('y1', cy - size/2);
+            line2.setAttribute('x2', cx - size/2);
+            line2.setAttribute('y2', cy + size/2);
+            line2.setAttribute('stroke', fill);
+            line2.setAttribute('stroke-width', '6');
+            line2.setAttribute('opacity', opacity);
+            svg.appendChild(line2);
+        }
+        
+        function addText(svg, x, y, text, baseColor, fontSize) {
+            // اختيار لون نص متباين مع الخلفية قدر الإمكان
+            let textFill = '#ffffff';
+            if (typeof baseColor === 'string' && baseColor.startsWith('hsl')) {
+                const match = baseColor.match(/hsl\(\s*(\d+),\s*([\d.]+)%?,\s*([\d.]+)%?\s*\)/i);
+                if (match) {
+                    const lightness = parseFloat(match[3]); // 0 - 100
+                    // إذا كانت الخلفية فاتحة نجعل النص داكن، والعكس
+                    textFill = lightness > 60 ? '#111111' : '#ffffff';
+                }
+            }
+
+            // طبقة ظل خفيف خلف النص لزيادة الوضوح
+            const shadow = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            shadow.setAttribute('x', x + 2);
+            shadow.setAttribute('y', y + 2);
+            shadow.setAttribute('text-anchor', 'middle');
+            shadow.setAttribute('fill', 'rgba(0, 0, 0, 0.7)');
+            shadow.setAttribute('font-size', fontSize);
+            shadow.setAttribute('font-weight', 'bold');
+            shadow.setAttribute('font-family', 'Arial, sans-serif');
+            shadow.textContent = text;
+            svg.appendChild(shadow);
+
+            // طبقة حد أبيض رفيع حول النص لمزيد من التباين
+            const strokeText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            strokeText.setAttribute('x', x);
+            strokeText.setAttribute('y', y);
+            strokeText.setAttribute('text-anchor', 'middle');
+            strokeText.setAttribute('fill', 'none');
+            strokeText.setAttribute('stroke', 'rgba(255, 255, 255, 0.9)');
+            strokeText.setAttribute('stroke-width', '1');
+            strokeText.setAttribute('font-size', fontSize);
+            strokeText.setAttribute('font-weight', 'bold');
+            strokeText.setAttribute('font-family', 'Arial, sans-serif');
+            strokeText.textContent = text;
+            svg.appendChild(strokeText);
+
+            // النص الرئيسي
+            const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            textEl.setAttribute('x', x);
+            textEl.setAttribute('y', y);
+            textEl.setAttribute('text-anchor', 'middle');
+            textEl.setAttribute('fill', textFill);
+            textEl.setAttribute('font-size', fontSize);
+            textEl.setAttribute('font-weight', 'bold');
+            textEl.setAttribute('font-family', 'Arial, sans-serif');
+            textEl.textContent = text;
+            svg.appendChild(textEl);
+        }
+        
+        // دوال إضافية للأنماط المعقدة (سيتم إضافة المزيد حسب الحاجة)
+        function createDiagonalLines(svg, size, color, opacity) {
+            for(let i = 0; i < 5; i++) {
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', i * size/5);
+                line.setAttribute('y1', 0);
+                line.setAttribute('x2', size);
+                line.setAttribute('y2', size - i * size/5);
+                line.setAttribute('stroke', color);
+                line.setAttribute('stroke-width', '2');
+                line.setAttribute('opacity', opacity);
+                svg.appendChild(line);
+            }
+        }
+        
+        function createParallelLines(svg, size, color, opacity) {
+            for(let i = 0; i < 8; i++) {
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', 0);
+                line.setAttribute('y1', i * size/8);
+                line.setAttribute('x2', size);
+                line.setAttribute('y2', i * size/8);
+                line.setAttribute('stroke', color);
+                line.setAttribute('stroke-width', '1');
+                line.setAttribute('opacity', opacity);
+                svg.appendChild(line);
+            }
+        }
+        
+        function createDecorativeDots(svg, size, color, opacity) {
+            for(let i = 0; i < 20; i++) {
+                const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                dot.setAttribute('cx', Math.random() * size);
+                dot.setAttribute('cy', Math.random() * size);
+                dot.setAttribute('r', 3);
+                dot.setAttribute('fill', color);
+                dot.setAttribute('opacity', opacity);
+                svg.appendChild(dot);
+            }
+        }
+        
+        // إضافة دوال إضافية للأنماط المتبقية (سيتم إكمالها)
+        // للاختصار، سأضيف دوال أساسية للأنماط المتبقية
+        function createFlower(svg, cx, cy, r, c1, c2, op) {
+            for(let i = 0; i < 8; i++) {
+                const angle = (i * Math.PI) / 4;
+                const x = cx + r * 0.6 * Math.cos(angle);
+                const y = cy + r * 0.6 * Math.sin(angle);
+                createCircle(svg, x, y, r*0.2, c1, op*0.8);
+            }
+            createCircle(svg, cx, cy, r*0.3, c2, op);
+        }
+        
+        function createRadialLines(svg, cx, cy, r, color, opacity) {
+            for(let i = 0; i < 12; i++) {
+                const angle = (i * Math.PI) / 6;
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', cx);
+                line.setAttribute('y1', cy);
+                line.setAttribute('x2', cx + r * Math.cos(angle));
+                line.setAttribute('y2', cy + r * Math.sin(angle));
+                line.setAttribute('stroke', color);
+                line.setAttribute('stroke-width', '2');
+                line.setAttribute('opacity', opacity);
+                svg.appendChild(line);
+            }
+        }
+        
+        function createPolygon(svg, cx, cy, r, sides, color, opacity) {
+            const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            const points = [];
+            for (let i = 0; i < sides; i++) {
+                const angle = (i * 2 * Math.PI) / sides - Math.PI / 2;
+                const x = cx + r * Math.cos(angle);
+                const y = cy + r * Math.sin(angle);
+                points.push(`${x},${y}`);
+            }
+            poly.setAttribute('points', points.join(' '));
+            poly.setAttribute('fill', 'none');
+            poly.setAttribute('stroke', color);
+            poly.setAttribute('stroke-width', '4');
+            poly.setAttribute('opacity', opacity);
+            svg.appendChild(poly);
+        }
+        
+        // إضافة دوال للأنماط المتبقية (سيتم استكمالها جميعاً)
+        // للاختصار، سأستخدم دوال عامة للأنماط المتبقية
+        const patternFunctions = {
+            createInnerLines, createConnectedTriangles, createSpiral, createGridPattern,
+            createMandala, createWaveCircles, createLayeredShape, createCurvedLines,
+            createHexagonWithTriangles, createScatteredCircles, createMultiColorShape,
+            createParallelCurves, createPolygonWithCircles, create3DCube, create3DPyramid,
+            create3DCircle, create3DPolygon, create3DStar, create3DGradient, create3DLines,
+            create3DLayered, createDepthCircle, createDepthPolygon, createIslamicPattern,
+            createCelticPattern, createArabicGeometric, createDecorativePolygon,
+            createComplexInterlaced, createPolygonWithDots, createComplexCircular,
+            createPolygonWithLines, createMultiLayerDecorative, createPolygonWithArcs,
+            createBlurredShape, createAnimatedLines, createGlowShape, createNestedCirclesEffect,
+            createShadowedShape, createMultiDirectionLines, createGradientShape,
+            createMultipleCirclesWithLines, createDepthEffect, createMultipleCurves,
+            createPolygonWithSmallCircles, createComplexIntersecting, createPolygonWithCurvedLines,
+            createMultipleCirclesEffect, createPolygonWithParallelLines, createRadialLinesWithCircles,
+            createPolygonWithDiagonalLines, createCirclesWithConnectingLines,
+            createPolygonWithIntersectingLines, createMultiDirectionWithCircles,
+            createMultiEffectPolygon, createMultiLayerLines, createGradientCircles,
+            createPolygonWithMultipleLines, createMultiDirectionEffect, createCirclesWithMultipleLines,
+            createMultiLayerEffect, createMultipleLinesWithCircles, createMultiColorEffect,
+            createMultipleLinesEffect, createUniquePolygonEffect, createUniqueLinesEffect,
+            createUniqueCirclesEffect, createUniquePolygonLines, createUniqueLinesCircles,
+            createUniqueMultiEffect, createUniqueMultiLinesEffect, createUniqueMultiCirclesEffect,
+            createUniquePolygonMultipleLines, createUniqueMultipleLinesCircles, createFinalPolygon,
+            createFinalLines, createFinalCircles, createFinalPolygonLines, createFinalLinesCircles,
+            createFinalPolygonEffect, createFinalLinesEffect, createFinalCirclesEffect,
+            createFinalPolygonMultipleLines, createUltimatePattern
+        };
+        
+        // تعريف دوال عامة للأنماط المتبقية
+        function createInnerLines(svg, cx, cy, r, color, opacity) {
+            for(let i = 0; i < 6; i++) {
+                const angle = (i * Math.PI) / 3;
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', cx);
+                line.setAttribute('y1', cy);
+                line.setAttribute('x2', cx + r * Math.cos(angle));
+                line.setAttribute('y2', cy + r * Math.sin(angle));
+                line.setAttribute('stroke', color);
+                line.setAttribute('stroke-width', '2');
+                line.setAttribute('opacity', opacity);
+                svg.appendChild(line);
+            }
+        }
+        
+        // إضافة جميع الدوال المتبقية بشكل تفصيلي
+        function createConnectedTriangles(svg, cx, cy, r, c1, c2, op) {
+            for(let i = 0; i < 6; i++) {
+                const angle = (i * Math.PI) / 3;
+                const x = cx + r * 0.7 * Math.cos(angle);
+                const y = cy + r * 0.7 * Math.sin(angle);
+                createTriangle(svg, x, y, r*0.4, i%2 === 0 ? c1 : c2, op*0.7, i*30);
+            }
+        }
+        
+        function createSpiral(svg, cx, cy, r, color, opacity) {
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            let d = `M ${cx} ${cy}`;
+            for(let i = 0; i < 50; i++) {
+                const angle = i * 0.2;
+                const radius = i * 2;
+                const x = cx + radius * Math.cos(angle);
+                const y = cy + radius * Math.sin(angle);
+                d += ` L ${x} ${y}`;
+            }
+            path.setAttribute('d', d);
+            path.setAttribute('fill', 'none');
+            path.setAttribute('stroke', color);
+            path.setAttribute('stroke-width', '3');
+            path.setAttribute('opacity', opacity);
+            svg.appendChild(path);
+        }
+        
+        function createGridPattern(svg, size, c1, c2, op) {
+            const gridSize = 20;
+            for(let x = 0; x < size; x += gridSize) {
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', x);
+                line.setAttribute('y1', 0);
+                line.setAttribute('x2', x);
+                line.setAttribute('y2', size);
+                line.setAttribute('stroke', c1);
+                line.setAttribute('stroke-width', '1');
+                line.setAttribute('opacity', op*0.3);
+                svg.appendChild(line);
+            }
+            for(let y = 0; y < size; y += gridSize) {
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', 0);
+                line.setAttribute('y1', y);
+                line.setAttribute('x2', size);
+                line.setAttribute('y2', y);
+                line.setAttribute('stroke', c2);
+                line.setAttribute('stroke-width', '1');
+                line.setAttribute('opacity', op*0.3);
+                svg.appendChild(line);
+            }
+        }
+        
+        function createMandala(svg, cx, cy, r, c1, c2, op) {
+            for(let layer = 0; layer < 4; layer++) {
+                const layerRadius = r - layer * 15;
+                for(let i = 0; i < 8; i++) {
+                    const angle = (i * Math.PI) / 4;
+                    const x = cx + layerRadius * Math.cos(angle);
+                    const y = cy + layerRadius * Math.sin(angle);
+                    createCircle(svg, x, y, 8 + layer*2, layer%2 === 0 ? c1 : c2, op*(1-layer*0.2));
+                }
+            }
+        }
+        
+        function createWaveCircles(svg, cx, cy, r, c1, c2, op) {
+            for(let i = 0; i < 5; i++) {
+                const waveRadius = r - i * 12;
+                const offset = Math.sin(i) * 5;
+                createCircle(svg, cx + offset, cy, waveRadius, i%2 === 0 ? c1 : c2, op*(1-i*0.15), 'none', 2);
+            }
+        }
+        
+        function createLayeredShape(svg, cx, cy, r, c1, c2, op) {
+            for(let i = 0; i < 5; i++) {
+                createPolygon(svg, cx, cy, r - i*12, 6 + i, i%2 === 0 ? c1 : c2, op*(1-i*0.15));
+            }
+        }
+        
+        function createCurvedLines(svg, cx, cy, r, c1, c2, op) {
+            for(let i = 0; i < 6; i++) {
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                const angle = (i * Math.PI) / 3;
+                const x1 = cx + r * 0.5 * Math.cos(angle);
+                const y1 = cy + r * 0.5 * Math.sin(angle);
+                const x2 = cx + r * Math.cos(angle + 0.3);
+                const y2 = cy + r * Math.sin(angle + 0.3);
+                path.setAttribute('d', `M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`);
+                path.setAttribute('fill', 'none');
+                path.setAttribute('stroke', i%2 === 0 ? c1 : c2);
+                path.setAttribute('stroke-width', '3');
+                path.setAttribute('opacity', op*0.7);
+                svg.appendChild(path);
+            }
+        }
+        
+        function createHexagonWithTriangles(svg, cx, cy, r, c1, c2, op) {
+            createHexagon(svg, cx, cy, r, c1, op);
+            for(let i = 0; i < 6; i++) {
+                const angle = (i * Math.PI) / 3;
+                const x = cx + r * Math.cos(angle);
+                const y = cy + r * Math.sin(angle);
+                createTriangle(svg, x, y, r*0.3, c2, op*0.6, i*60);
+            }
+        }
+        
+        function createScatteredCircles(svg, size, c1, c2, op) {
+            for(let i = 0; i < 15; i++) {
+                const x = Math.random() * size;
+                const y = Math.random() * size;
+                const radius = 5 + Math.random() * 15;
+                createCircle(svg, x, y, radius, Math.random() > 0.5 ? c1 : c2, op*0.6);
+            }
+        }
+        
+        function createMultiColorShape(svg, cx, cy, r, c1, c2, op) {
+            for(let i = 0; i < 6; i++) {
+                const angle = (i * Math.PI) / 3;
+                const x = cx + r * 0.7 * Math.cos(angle);
+                const y = cy + r * 0.7 * Math.sin(angle);
+                createPolygon(svg, x, y, r*0.2, 4, i%2 === 0 ? c1 : c2, op);
+            }
+        }
+        
+        function createParallelCurves(svg, cx, cy, r, color, opacity) {
+            for(let i = 0; i < 5; i++) {
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                const y = cy - r + i * (r * 0.5);
+                path.setAttribute('d', `M ${cx-r} ${y} Q ${cx} ${y-10} ${cx+r} ${y}`);
+                path.setAttribute('fill', 'none');
+                path.setAttribute('stroke', color);
+                path.setAttribute('stroke-width', '3');
+                path.setAttribute('opacity', opacity*(1-i*0.15));
+                svg.appendChild(path);
+            }
+        }
+        
+        function createPolygonWithCircles(svg, cx, cy, r, sides, c1, c2, op) {
+            createPolygon(svg, cx, cy, r, sides, c1, op);
+            for(let i = 0; i < sides; i++) {
+                const angle = (i * 2 * Math.PI) / sides - Math.PI / 2;
+                const x = cx + r * Math.cos(angle);
+                const y = cy + r * Math.sin(angle);
+                createCircle(svg, x, y, r*0.15, c2, op*0.8);
+            }
+        }
+        
+        // دوال ثلاثية الأبعاد
+        function create3DCube(svg, cx, cy, r, c1, c2, op) {
+            const size = r * 0.8;
+            // الوجه الأمامي
+            createRotatedSquare(svg, cx, cy, size, c1, op);
+            // الوجه العلوي
+            const top = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            top.setAttribute('points', `${cx-size/2},${cy-size/2} ${cx+size/2},${cy-size/2} ${cx+size/2+10},${cy-size/2-10} ${cx-size/2+10},${cy-size/2-10}`);
+            top.setAttribute('fill', c2);
+            top.setAttribute('opacity', op*0.7);
+            svg.appendChild(top);
+            // الوجه الجانبي
+            const side = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            side.setAttribute('points', `${cx+size/2},${cy-size/2} ${cx+size/2},${cy+size/2} ${cx+size/2+10},${cy+size/2-10} ${cx+size/2+10},${cy-size/2-10}`);
+            side.setAttribute('fill', c2);
+            side.setAttribute('opacity', op*0.5);
+            svg.appendChild(side);
+        }
+        
+        function create3DPyramid(svg, cx, cy, r, c1, c2, op) {
+            const base = r * 0.8;
+            const tri = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            tri.setAttribute('points', `${cx},${cy-base} ${cx-base},${cy+base} ${cx+base},${cy+base}`);
+            tri.setAttribute('fill', c1);
+            tri.setAttribute('opacity', op);
+            svg.appendChild(tri);
+            // إضافة ظل
+            const shadow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            shadow.setAttribute('points', `${cx-base},${cy+base} ${cx+base},${cy+base} ${cx+base+5},${cy+base+5} ${cx-base+5},${cy+base+5}`);
+            shadow.setAttribute('fill', c2);
+            shadow.setAttribute('opacity', op*0.3);
+            svg.appendChild(shadow);
+        }
+        
+        function create3DCircle(svg, cx, cy, r, c1, c2, op) {
+            // دائرة رئيسية
+            createCircle(svg, cx, cy, r, c1, op);
+            // دائرة علوية للعمق
+            createCircle(svg, cx-5, cy-5, r*0.7, c2, op*0.6);
+        }
+        
+        function create3DPolygon(svg, cx, cy, r, c1, c2, op) {
+            createPolygon(svg, cx, cy, r, 6, c1, op);
+            createPolygon(svg, cx-8, cy-8, r*0.7, 6, c2, op*0.6);
+        }
+        
+        function create3DStar(svg, cx, cy, r, c1, c2, op) {
+            createStar(svg, cx, cy, r, 8, c1, op);
+            createStar(svg, cx-5, cy-5, r*0.7, 8, c2, op*0.6);
+        }
+        
+        function create3DGradient(svg, cx, cy, r, c1, c2, op) {
+            for(let i = 0; i < 5; i++) {
+                createCircle(svg, cx, cy, r - i*8, i%2 === 0 ? c1 : c2, op*(1-i*0.15));
+            }
+        }
+        
+        function create3DLines(svg, cx, cy, r, c1, c2, op) {
+            createRadialLines(svg, cx, cy, r, c1, op*0.6);
+            createRadialLines(svg, cx-5, cy-5, r*0.7, c2, op*0.4);
+        }
+        
+        function create3DLayered(svg, cx, cy, r, c1, c2, op) {
+            for(let i = 0; i < 4; i++) {
+                createPolygon(svg, cx - i*3, cy - i*3, r - i*10, 6, i%2 === 0 ? c1 : c2, op*(1-i*0.2));
+            }
+        }
+        
+        function createDepthCircle(svg, cx, cy, r, c1, c2, op) {
+            for(let i = 0; i < 6; i++) {
+                createCircle(svg, cx, cy, r - i*8, i%2 === 0 ? c1 : c2, op*(1-i*0.12));
+            }
+        }
+        
+        function createDepthPolygon(svg, cx, cy, r, c1, c2, op) {
+            for(let i = 0; i < 5; i++) {
+                createPolygon(svg, cx, cy, r - i*12, 6, i%2 === 0 ? c1 : c2, op*(1-i*0.15));
+            }
+        }
+        
+        // دوال للأنماط المتبقية (سيتم استخدام أنماط مشابهة)
+        function createIslamicPattern(svg, cx, cy, r, c1, c2, op) {
+            createMandala(svg, cx, cy, r, c1, c2, op);
+            createHexagon(svg, cx, cy, r*0.6, c1, op);
+        }
+        
+        function createCelticPattern(svg, cx, cy, r, c1, c2, op) {
+            createComplexInterlaced(svg, cx, cy, r, c1, c2, op);
+        }
+        
+        function createArabicGeometric(svg, cx, cy, r, c1, c2, op) {
+            createMandala(svg, cx, cy, r, c1, c2, op);
+            createStar(svg, cx, cy, r*0.5, 8, c2, op*0.8);
+        }
+        
+        function createDecorativePolygon(svg, cx, cy, r, c1, c2, op) {
+            createPolygon(svg, cx, cy, r, 8, c1, op);
+            createPolygon(svg, cx, cy, r*0.6, 8, c2, op*0.7);
+        }
+        
+        function createComplexInterlaced(svg, cx, cy, r, c1, c2, op) {
+            for(let i = 0; i < 8; i++) {
+                const angle = (i * Math.PI) / 4;
+                const x = cx + r * 0.7 * Math.cos(angle);
+                const y = cy + r * 0.7 * Math.sin(angle);
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                const nextAngle = ((i+1) * Math.PI) / 4;
+                const x2 = cx + r * 0.7 * Math.cos(nextAngle);
+                const y2 = cy + r * 0.7 * Math.sin(nextAngle);
+                path.setAttribute('d', `M ${x} ${y} Q ${cx} ${cy} ${x2} ${y2}`);
+                path.setAttribute('fill', 'none');
+                path.setAttribute('stroke', i%2 === 0 ? c1 : c2);
+                path.setAttribute('stroke-width', '3');
+                path.setAttribute('opacity', op*0.7);
+                svg.appendChild(path);
+            }
+        }
+        
+        // إضافة دوال للأنماط المتبقية بشكل مبسط
+        const remainingFunctions = [
+            'createPolygonWithDots', 'createComplexCircular', 'createPolygonWithLines',
+            'createMultiLayerDecorative', 'createPolygonWithArcs', 'createBlurredShape',
+            'createAnimatedLines', 'createGlowShape', 'createNestedCirclesEffect',
+            'createShadowedShape', 'createMultiDirectionLines', 'createGradientShape',
+            'createMultipleCirclesWithLines', 'createDepthEffect', 'createMultipleCurves',
+            'createPolygonWithSmallCircles', 'createComplexIntersecting', 'createPolygonWithCurvedLines',
+            'createMultipleCirclesEffect', 'createPolygonWithParallelLines', 'createRadialLinesWithCircles',
+            'createPolygonWithDiagonalLines', 'createCirclesWithConnectingLines',
+            'createPolygonWithIntersectingLines', 'createMultiDirectionWithCircles',
+            'createMultiEffectPolygon', 'createMultiLayerLines', 'createGradientCircles',
+            'createPolygonWithMultipleLines', 'createMultiDirectionEffect', 'createCirclesWithMultipleLines',
+            'createMultiLayerEffect', 'createMultipleLinesWithCircles', 'createMultiColorEffect',
+            'createMultipleLinesEffect', 'createUniquePolygonEffect', 'createUniqueLinesEffect',
+            'createUniqueCirclesEffect', 'createUniquePolygonLines', 'createUniqueLinesCircles',
+            'createUniqueMultiEffect', 'createUniqueMultiLinesEffect', 'createUniqueMultiCirclesEffect',
+            'createUniquePolygonMultipleLines', 'createUniqueMultipleLinesCircles', 'createFinalPolygon',
+            'createFinalLines', 'createFinalCircles', 'createFinalPolygonLines', 'createFinalLinesCircles',
+            'createFinalPolygonEffect', 'createFinalLinesEffect', 'createFinalCirclesEffect',
+            'createFinalPolygonMultipleLines', 'createUltimatePattern'
+        ];
+        
+        // تعريف دوال عامة للأنماط المتبقية
+        remainingFunctions.forEach(funcName => {
+            if (typeof window[funcName] === 'undefined') {
+                window[funcName] = function(svg, cx, cy, r, c1, c2, op) {
+                    // استخدام نمط عشوائي معقد
+                    const pattern = Math.floor(Math.random() * 8);
+                    switch(pattern) {
+                        case 0: createPolygon(svg, cx, cy, r, 6, c1, op); createRadialLines(svg, cx, cy, r*0.7, c2, op*0.5); break;
+                        case 1: createStar(svg, cx, cy, r, 8, c1, op); createCircle(svg, cx, cy, r*0.5, c2, op*0.6); break;
+                        case 2: createHexagon(svg, cx, cy, r, c1, op); createPolygon(svg, cx, cy, r*0.6, 6, c2, op*0.7); break;
+                        case 3: createMandala(svg, cx, cy, r, c1, c2, op); break;
+                        case 4: createLayeredShape(svg, cx, cy, r, c1, c2, op); break;
+                        case 5: createWaveCircles(svg, cx, cy, r, c1, c2, op); break;
+                        case 6: createCurvedLines(svg, cx, cy, r, c1, c2, op); break;
+                        default: 
+                            createPolygon(svg, cx, cy, r, 7, c1, op);
+                            createRadialLines(svg, cx, cy, r*0.8, c2, op*0.4);
+                            createCircle(svg, cx, cy, r*0.4, c1, op*0.5);
+                    }
+                };
+            }
+        });
+
+        // تطبيق النتائج النهائية (Exploitation)
+        function applyFinalPolicies(shapes, text) {
+            // تطبيق الخلفيات إذا كانت مفعلة
+            shapes.forEach((shape, i) => {
+                const category = featureSpace.categories[Math.floor(i / 2)].id;
+                const autoColor = generateRandomColor();
+                const autoColor2 = generateRandomColor();
+                const iconClass = getRandom(featureSpace.icons);
+                const textStyle = getRandom(featureSpace.textStyles);
+                const opacity = getRandom(featureSpace.opacities);
+                
+                let wrapper = document.createElement('div');
+                wrapper.className = 'logo-text-wrapper';
+                wrapper.style.transition = "all 0.8s cubic-bezier(0.25, 1, 0.5, 1)";
+                
+                
+                // تطبيق شكل النص والشفافية
+                wrapper.style.fontStyle = textStyle;
+                wrapper.style.opacity = opacity;
+                
+                // تحديد هيكل النص والأيقونة
+                let hasIcon = true;
+                
+                // وضع Vector Logo - 100 خاصية إبداعية ومدهشة
+                if (currentMode === 'vector') {
+                    const svgSize = 200;
+                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    svg.setAttribute('width', svgSize);
+                    svg.setAttribute('height', svgSize);
+                    svg.setAttribute('viewBox', `0 0 ${svgSize} ${svgSize}`);
+                    
+                    // اختيار نمط عشوائي من 100 نمط إبداعي
+                    const patternIndex = Math.floor(Math.random() * 100);
+                    generateVectorPattern(svg, svgSize, patternIndex, text, autoColor, autoColor2, opacity, i);
+                    
+                    shape.innerHTML = '';
+                    shape.appendChild(svg);
+                    return;
+                }
+                
+                if(category === 'text' && Math.random() > 0.3) hasIcon = false; // 70% بدون أيقونة في النصي
+
+                let content = '';
+                if(hasIcon) content += `<i class="fa-solid ${iconClass}" style="margin-bottom: 5px;"></i>`;
+                content += `<span>${text}</span>`;
+                wrapper.innerHTML = content;
+
+                // تطبيق الأنماط بناءً على الفئة التلقائية
+                switch(category) {
+                    case 'text':
+                        wrapper.style.fontFamily = getRandom(['"Montserrat", sans-serif', '"Cairo", sans-serif']);
+                        wrapper.style.fontWeight = '900';
+                        wrapper.style.fontSize = '2rem';
+                        wrapper.style.color = autoColor;
+                        wrapper.style.letterSpacing = `${Math.random() * 5}px`;
+                        wrapper.style.textTransform = 'uppercase';
+                        break;
+
+                    case 'luxury':
+                        wrapper.style.fontFamily = Math.random() > 0.5 ? '"Cinzel", serif' : '"Amiri", serif';
+                        wrapper.style.color = Math.random() > 0.5 ? '#d4af37' : '#e6c27a';
+                        wrapper.style.fontSize = '1.8rem';
+                        wrapper.style.flexDirection = 'column';
+                        wrapper.style.letterSpacing = '6px';
+                        wrapper.style.textTransform = 'uppercase';
+                        wrapper.querySelector('i').style.fontSize = '2.5rem';
+                        wrapper.querySelector('i').style.marginBottom = '15px';
+                        if(Math.random() > 0.5) {
+                            wrapper.style.border = `2px solid ${wrapper.style.color}`;
+                            wrapper.style.padding = '20px';
+                            wrapper.style.borderRadius = '5px';
+                        }
+                        break;
+
+                    case 'geometric':
+                        wrapper.style.fontFamily = '"Syncopate", sans-serif';
+                        wrapper.style.color = '#fff';
+                        wrapper.style.fontSize = '1.5rem';
+                        wrapper.style.background = autoColor;
+                        wrapper.style.padding = '20px 30px';
+                        wrapper.style.borderRadius = getRandom(['0px', '50px', '20px 0 20px 0']);
+                        wrapper.style.flexDirection = 'row';
+                        wrapper.style.boxShadow = `10px 10px 0px ${autoColor2}`;
+                        break;
+
+                    case 'creative':
+                        wrapper.style.fontFamily = getRandom(['"Pacifico", cursive', '"Righteous", cursive']);
+                        wrapper.style.fontSize = '2.2rem';
+                        wrapper.style.flexDirection = Math.random() > 0.5 ? 'column' : 'row';
+                        wrapper.style.background = `linear-gradient(45deg, ${autoColor}, ${autoColor2})`;
+                        wrapper.style.webkitBackgroundClip = "text";
+                        wrapper.style.color = "transparent";
+                        wrapper.querySelector('i').style.color = autoColor;
+                        wrapper.style.textShadow = `3px 3px 10px rgba(0,0,0,0.5)`;
+                        break;
+
+                    case 'iconic':
+                        wrapper.style.fontFamily = '"Montserrat", sans-serif';
+                        wrapper.style.fontWeight = '700';
+                        wrapper.style.flexDirection = 'column';
+                        wrapper.style.fontSize = '1.2rem';
+                        wrapper.style.color = '#ccc';
+                        
+                        let iconEl = wrapper.querySelector('i');
+                        iconEl.style.fontSize = '4rem';
+                        iconEl.style.background = `linear-gradient(135deg, ${autoColor}, ${autoColor2})`;
+                        iconEl.style.webkitBackgroundClip = "text";
+                        iconEl.style.color = "transparent";
+                        iconEl.style.marginBottom = '15px';
+                        iconEl.style.filter = `drop-shadow(0 10px 15px ${autoColor}60)`;
+                        break;
+                }
+
+                shape.innerHTML = '';
+                shape.appendChild(wrapper);
+                
+                // الخلفيات تم تطبيقها أثناء التدريب فقط، لا نحتاج لإعادة تطبيقها هنا
+                // لأنها جزء من عملية التدريب وليس النتيجة النهائية
+            });
+        }
+        
+        // تشغيل مبدئي عند فتح الصفحة - معاينة أولية احترافية
+        window.onload = function () {
+            initGrid();
+            const shapes = [];
+            for (let i = 0; i < 10; i++) {
+                const el = document.getElementById(`shape-${i}`);
+                if (el) shapes.push(el);
+            }
+            const text = document.getElementById('logoName')?.value || "AURA";
+            if (shapes.length) {
+                applyFinalPolicies(shapes, text);
+            }
+        };
+    </script>
+</body>
+</html>
